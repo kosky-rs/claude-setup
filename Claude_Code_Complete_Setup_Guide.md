@@ -19,9 +19,10 @@
 7. [タスク管理ワークフロー](#第7章-タスク管理ワークフロー)
 8. [Hooksと品質ゲート](#第8章-hooksと品質ゲート)
 9. [カスタムコマンド](#第9章-カスタムコマンド)
-10. [セットアップ手順](#第10章-セットアップ手順)
-11. [運用ガイドライン](#第11章-運用ガイドライン)
-12. [付録](#付録)
+10. [Issue管理と継続的改善](#第10章-issue管理と継続的改善)
+11. [セットアップ手順](#第11章-セットアップ手順)
+12. [運用ガイドライン](#第12章-運用ガイドライン)
+13. [付録](#付録)
 
 ---
 
@@ -165,6 +166,8 @@ Level 3: リソースのロード（スクリプト、テンプレート等）
 ~/.claude/
 ├── CLAUDE.md                    # グローバル指示（最小限、英語推奨）
 ├── settings.json                # Hooks, Permissions
+├── issues.json                  # グローバルIssue管理
+├── upgrade-log.md               # アップグレード履歴
 ├── docs/                        # 詳細ドキュメント（@importで参照）
 │   ├── behavior-principles.md   # 振る舞い原則
 │   ├── task-workflow.md         # タスク管理ワークフロー
@@ -172,7 +175,9 @@ Level 3: リソースのロード（スクリプト、テンプレート等）
 │   └── quality-gates.md         # 品質チェック
 └── commands/                    # グローバルカスタムコマンド
     ├── checkpoint.md
-    └── review.md
+    ├── review.md
+    ├── upgrade-global.md        # 設定アップグレード
+    └── verify-upgrade.md        # 効果検証
 
 ~/.claude.json                   # User scope MCP設定
 ```
@@ -184,6 +189,7 @@ project/
 ├── CLAUDE.md                    # プロジェクト固有指示
 ├── .mcp.json                    # Project scope MCP（Git管理）
 ├── tasks.json                   # タスク状態（JSON）
+├── issues.json                  # プロジェクトIssue管理
 ├── progress.md                  # 進捗メモ（Markdown）
 ├── docs/
 │   ├── architecture.md          # アーキテクチャ詳細
@@ -195,6 +201,9 @@ project/
 │   ├── commands/                # プロジェクト固有コマンド
 │   │   ├── start-task.md
 │   │   ├── complete-task.md
+│   │   ├── log-issue.md         # Issue記録
+│   │   ├── retrospective.md     # セッション振り返り
+│   │   ├── sync-issues-to-global.md  # グローバル同期
 │   │   └── deploy.md
 │   ├── agents/                  # Subagent定義
 │   │   ├── security-reviewer.md
@@ -1127,9 +1136,271 @@ Provide feedback in this structure:
 
 ---
 
-# 第10章: セットアップ手順
+# 第10章: Issue管理と継続的改善
 
-## 10.1 事前準備
+## 10.1 概要
+
+プロジェクト横断でIssueを蓄積し、CLAUDE.mdを継続的に改善するシステムです。
+
+### 改善サイクル
+
+```
+セッション中 → /log-issue で問題記録
+    ↓
+セッション終了 → /retrospective で振り返り
+    ↓
+プロジェクト終了 → /sync-issues-to-global で蓄積
+    ↓
+定期メンテナンス → /upgrade-global で設定改善
+    ↓
+効果検証 → /verify-upgrade で確認
+```
+
+## 10.2 Issue管理ファイル
+
+### グローバルIssue（~/.claude/issues.json）
+
+```json
+{
+  "version": "1.0.0",
+  "created": "2025-12-01T10:00:00Z",
+  "updated": "2025-12-01T15:00:00Z",
+  "statistics": {
+    "total_issues": 5,
+    "resolved": 3,
+    "pending": 2,
+    "wontfix": 0
+  },
+  "issues": [
+    {
+      "id": "G-001",
+      "title": "テスト未実行でコミット",
+      "category": "quality-gate",
+      "severity": "high",
+      "status": "resolved",
+      "occurrences": [
+        {"project": "project-a", "date": "2025-12-01"},
+        {"project": "project-b", "date": "2025-12-02"}
+      ],
+      "resolution": {
+        "type": "claude_md_update",
+        "file": "~/.claude/docs/quality-gates.md",
+        "change": "YOU MUST run tests before completion追加",
+        "applied_at": "2025-12-02T10:00:00Z"
+      },
+      "effectiveness": {
+        "measured_at": "2025-12-05T10:00:00Z",
+        "recurrence": false,
+        "verdict": "effective"
+      }
+    }
+  ],
+  "patterns": [
+    {
+      "id": "P-001",
+      "name": "Test Skipping Pattern",
+      "related_issues": ["G-001", "G-003"],
+      "frequency": "weekly"
+    }
+  ]
+}
+```
+
+### プロジェクトIssue（./issues.json）
+
+```json
+{
+  "project": "my-project",
+  "created": "2025-12-01T10:00:00Z",
+  "updated": "2025-12-01T15:00:00Z",
+  "issues": [
+    {
+      "id": "P-001",
+      "title": "テスト未実行でコミット",
+      "category": "quality-gate",
+      "severity": "high",
+      "status": "logged",
+      "session": "2025-12-01-session-2",
+      "context": "Task 3実装中にテストを実行せずにコミット",
+      "impact": "バグがマージされた",
+      "root_cause": "pre-commitワークフローにテスト必須の指示がない",
+      "suggested_fix": "complete-taskにテスト必須ステップを追加",
+      "global_relevance": true,
+      "synced_to_global": false,
+      "logged_at": "2025-12-01T14:30:00Z"
+    }
+  ]
+}
+```
+
+## 10.3 Issue管理コマンド
+
+### /log-issue - Issue記録
+
+```markdown
+---
+description: Log an issue during work
+---
+
+# Log Issue: $ARGUMENTS
+
+1. Analyze the issue and classify:
+   - Category: quality-gate, context-management, workflow, code-standard, communication
+   - Severity: critical, high, medium, low
+   - Global relevance: true/false
+
+2. Create issue entry in issues.json
+
+3. Prompt for immediate action:
+   - Continue work
+   - Fix now
+   - Add to CLAUDE.md
+   - Block current task
+```
+
+### /retrospective - セッション振り返り
+
+```markdown
+---
+description: End-of-session review
+---
+
+# Session Retrospective
+
+1. Gather session data (git log, progress.md, issues.json)
+
+2. Analyze against checklist:
+   - CLAUDE.md compliance
+   - Quality gate adherence
+   - Workflow steps followed
+   - Communication effectiveness
+
+3. Detect unlogged issues
+
+4. Present findings and confirm which to log
+
+5. Update progress.md with retrospective summary
+```
+
+### /sync-issues-to-global - グローバル同期
+
+```markdown
+---
+description: Sync project issues to global tracker
+---
+
+# Sync Issues to Global
+
+1. Filter: global_relevance: true, synced_to_global: false
+
+2. Match against existing global issues
+
+3. For matches: Add occurrence
+   For new: Create global issue
+
+4. Detect patterns (3+ issues with same category)
+
+5. Mark project issues as synced
+```
+
+### /upgrade-global - 設定アップグレード
+
+```markdown
+---
+description: Upgrade global configuration based on issues
+---
+
+# Upgrade Global Configuration
+
+1. Load global issues (pending, high/critical priority)
+
+2. Generate improvement proposals:
+   - CLAUDE.md updates (new rules, stronger keywords)
+   - Hook additions (automated enforcement)
+   - Structural changes (new commands, workflows)
+
+3. Present proposals with priority ranking
+
+4. Apply approved changes
+
+5. Log to upgrade-log.md
+```
+
+### /verify-upgrade - 効果検証
+
+```markdown
+---
+description: Verify effectiveness of upgrades
+---
+
+# Verify Upgrade Effectiveness
+
+1. Find recently resolved issues (within 2 weeks)
+
+2. Check for recurrence in global/project issues
+
+3. Evaluate: Effective / Partially Effective / Ineffective
+
+4. Update issue records with verdict
+
+5. Recommend escalation for ineffective fixes
+```
+
+## 10.4 アップグレードログ
+
+### ファイル: ~/.claude/upgrade-log.md
+
+```markdown
+# CLAUDE.md Upgrade Log
+
+## Upgrade: 2025-12-02
+
+### Trigger
+- Pending issues: 5
+- Command: /upgrade-global
+
+### Changes Applied
+1. **G-001**: テスト未実行でコミット
+   - File: ~/.claude/docs/quality-gates.md
+   - Type: claude_md_update
+   - Change: "YOU MUST run tests before completion" 追加
+
+### Skipped
+- G-003: Deferred to next cycle
+
+### Effectiveness Tracking
+Monitor in next 5 sessions:
+- G-001: Should see no commits without tests
+
+---
+```
+
+## 10.5 Issue分類
+
+| カテゴリ | 説明 | 例 |
+|----------|------|-----|
+| quality-gate | テスト・検証の問題 | テスト未実行でコミット |
+| context-management | コンテキスト管理 | コンテキストオーバーフロー |
+| workflow | プロセス・手順 | Plan Mode未使用 |
+| code-standard | コーディング規約 | 命名規則違反 |
+| communication | 確認・報告 | 承認なしで実装開始 |
+| mcp | MCP設定・使用 | MCP接続エラー |
+| permission | セキュリティ・アクセス | 機密ファイル読み取り |
+
+## 10.6 重要度判定
+
+| 重要度 | 基準 | 対応 |
+|--------|------|------|
+| critical | データ損失、セキュリティリスク | 即時対応必須 |
+| high | 効率・品質に大きな影響 | 次回アップグレードで対応 |
+| medium | 改善が望ましい | 余裕があれば対応 |
+| low | 軽微な不便 | 蓄積後に検討 |
+
+---
+
+# 第11章: セットアップ手順
+
+## 11.1 事前準備
 
 ### 必要なツール
 
@@ -1152,7 +1423,7 @@ export GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
 export DATABASE_URL="postgresql://user:pass@localhost:5432/dev"
 ```
 
-## 10.2 グローバル設定セットアップ
+## 11.2 グローバル設定セットアップ
 
 ### Step 1: ディレクトリ作成
 
@@ -1252,7 +1523,7 @@ EOF
 # を ~/.claude/docs/ に配置（本ドキュメント第4章参照）
 ```
 
-## 10.3 プロジェクト設定セットアップ
+## 11.3 プロジェクト設定セットアップ
 
 ### Step 1: ディレクトリ作成
 
@@ -1359,7 +1630,7 @@ cat >> .gitignore << 'EOF'
 EOF
 ```
 
-## 10.4 動作確認
+## 11.4 動作確認
 
 ```bash
 # Claude Code起動
@@ -1377,9 +1648,9 @@ claude
 
 ---
 
-# 第11章: 運用ガイドライン
+# 第12章: 運用ガイドライン
 
-## 11.1 日常運用
+## 12.1 日常運用
 
 ### セッション開始ルーチン
 
@@ -1403,7 +1674,7 @@ claude
 5. 次セッションへの引き継ぎ事項記録
 ```
 
-## 11.2 トラブルシューティング
+## 12.2 トラブルシューティング
 
 ### 問題: CLAUDE.mdが読み込まれない
 
@@ -1442,7 +1713,7 @@ claude
 2. 「IMPORTANT」「YOU MUST」を追加
 3. テスト実行をHooksで強制
 
-## 11.3 CLAUDE.md育成サイクル
+## 12.3 CLAUDE.md育成サイクル
 
 ```
 問題発生
@@ -1554,6 +1825,7 @@ claude --mcp-debug
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-12-01 | 初版作成 |
+| 1.1 | 2025-12-02 | 第10章: Issue管理と継続的改善を追加 |
 
 ---
 
