@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(rm -rf *)",
+        "hooks": [
+          {
+            "type": "block",
+            "message": "Dangerous recursive delete blocked. Use specific paths instead."
+          }
+        ]
+      },
+      {
+        "matcher": "Write(.env.production)",
+        "hooks": [
+          {
+            "type": "block",
+            "message": "Production environment file modification blocked."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write(src/**/*.ts)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $file 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "npx eslint $file --fix 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write(src/**/*.tsx)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $file 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "npx eslint $file --fix 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

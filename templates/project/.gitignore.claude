@@ -1,0 +1,14 @@
+# Claude Code - Add these to your .gitignore
+
+# Local Claude settings (personal overrides)
+.claude/settings.local.json
+
+# MCP environment variables (contains API keys)
+.env.mcp
+
+# Local environment overrides
+.env.local
+.env.*.local
+
+# Temporary checkpoint files
+*.checkpoint.md

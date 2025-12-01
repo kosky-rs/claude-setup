@@ -1,0 +1,100 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Bash(git *)",
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(echo *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/.ssh/**)",
+      "Write(./production.*)",
+      "Write(./.env.production)",
+      "Bash(rm -rf /)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write(*.py)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m black $file 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "python -m ruff check $file 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write(*.ts)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $file 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write(*.tsx)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $file 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write(*.js)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $file 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write(*.jsx)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $file 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write(*.json)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $file 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

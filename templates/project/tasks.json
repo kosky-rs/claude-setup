@@ -1,0 +1,25 @@
+{
+  "project": "project-name",
+  "version": "1.0.0",
+  "created": "",
+  "updated": "",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Project Setup",
+      "description": "Initialize project structure and development environment",
+      "status": "pending",
+      "type": "medium",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "All dependencies installed",
+        "Development server runs successfully",
+        "Basic tests pass"
+      ],
+      "subtasks": [],
+      "notes": "",
+      "created_at": "",
+      "completed_at": null
+    }
+  ]
+}
