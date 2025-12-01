@@ -14,7 +14,18 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
+
+# Cross-platform sed -i
+sed_inplace() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
 
 # Get script directory and template directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -84,12 +95,12 @@ if [ -f "CLAUDE.md" ]; then
         echo "Skipping CLAUDE.md..."
     else
         cp "${TEMPLATE_DIR}/CLAUDE.md" ./CLAUDE.md
-        sed -i "s/\[PROJECT_NAME\]/${PROJECT_NAME}/g" ./CLAUDE.md
+        sed_inplace "s/\[PROJECT_NAME\]/${PROJECT_NAME}/g" ./CLAUDE.md
         echo -e "${GREEN}✓ CLAUDE.md created${NC}"
     fi
 else
     cp "${TEMPLATE_DIR}/CLAUDE.md" ./CLAUDE.md
-    sed -i "s/\[PROJECT_NAME\]/${PROJECT_NAME}/g" ./CLAUDE.md
+    sed_inplace "s/\[PROJECT_NAME\]/${PROJECT_NAME}/g" ./CLAUDE.md
     echo -e "${GREEN}✓ CLAUDE.md created${NC}"
 fi
 
@@ -153,7 +164,7 @@ echo "Copying configuration files..."
 # Tasks.json
 if [ ! -f "tasks.json" ]; then
     cp "${TEMPLATE_DIR}/tasks.json" ./tasks.json
-    sed -i "s/project-name/${PROJECT_NAME}/g" ./tasks.json
+    sed_inplace "s/project-name/${PROJECT_NAME}/g" ./tasks.json
     echo -e "${GREEN}✓ tasks.json created${NC}"
 else
     echo -e "${YELLOW}✓ tasks.json already exists (skipped)${NC}"
@@ -162,7 +173,7 @@ fi
 # Issues.json
 if [ ! -f "issues.json" ]; then
     cp "${TEMPLATE_DIR}/issues.json" ./issues.json
-    sed -i "s/project-name/${PROJECT_NAME}/g" ./issues.json
+    sed_inplace "s/project-name/${PROJECT_NAME}/g" ./issues.json
     echo -e "${GREEN}✓ issues.json created${NC}"
 else
     echo -e "${YELLOW}✓ issues.json already exists (skipped)${NC}"
@@ -171,7 +182,7 @@ fi
 # Progress.md
 if [ ! -f "progress.md" ]; then
     cp "${TEMPLATE_DIR}/progress.md" ./progress.md
-    sed -i "s/\[PROJECT_NAME\]/${PROJECT_NAME}/g" ./progress.md
+    sed_inplace "s/\[PROJECT_NAME\]/${PROJECT_NAME}/g" ./progress.md
     echo -e "${GREEN}✓ progress.md created${NC}"
 else
     echo -e "${YELLOW}✓ progress.md already exists (skipped)${NC}"
@@ -228,33 +239,61 @@ fi
 
 echo ""
 echo "========================================"
-echo -e "${GREEN}Project setup complete!${NC}"
+echo -e "${GREEN}${BOLD}✅ Project setup complete!${NC}"
 echo "========================================"
 echo ""
-echo "Files created:"
-echo "  ./CLAUDE.md"
-echo "  ./.mcp.json"
-echo "  ./tasks.json"
-echo "  ./issues.json"
-echo "  ./progress.md"
-echo "  ./.claude/settings.json"
-echo "  ./.claude/commands/"
-echo "    - start-task.md"
-echo "    - complete-task.md"
-echo "    - log-issue.md"
-echo "    - retrospective.md"
-echo "    - sync-issues-to-global.md"
-echo "  ./.claude/agents/"
-echo "  ./docs/"
+
+# Summary of created files
+echo -e "${BOLD}📁 Files Created:${NC}"
+echo "  ├── CLAUDE.md              # Project instructions"
+echo "  ├── .mcp.json              # MCP configuration"
+echo "  ├── tasks.json             # Task management"
+echo "  ├── issues.json            # Issue tracking"
+echo "  ├── progress.md            # Progress log"
+echo "  ├── .claude/"
+echo "  │   ├── settings.json      # Hooks & permissions"
+echo "  │   ├── commands/          # 5 custom commands"
+echo "  │   └── agents/            # Subagents"
+echo "  └── docs/                  # Documentation templates"
 echo ""
-echo "Next steps:"
-echo "  1. Customize CLAUDE.md with project details"
-echo "  2. Copy .env.mcp.example to .env.mcp and add credentials"
-echo "  3. Update docs/architecture.md"
-echo "  4. Run 'claude' and verify with '/context'"
+
+# Next Steps - Structured and Clear
+echo -e "${BOLD}${CYAN}📋 NEXT STEPS:${NC}"
 echo ""
-echo "Issue Management Commands:"
-echo "  /log-issue [desc]       - Log an issue during work"
-echo "  /retrospective          - End-of-session review"
-echo "  /sync-issues-to-global  - Sync to global tracker"
+echo -e "${BOLD}Step 1: Configure Project${NC}"
+echo "  Edit CLAUDE.md and fill in:"
+echo "    - Project overview"
+echo "    - Tech stack table"
+echo "    - Directory structure"
+echo "    - Development commands"
+echo ""
+echo -e "${BOLD}Step 2: Setup Environment (if needed)${NC}"
+echo "  cp .env.mcp.example .env.mcp"
+echo "  # Edit .env.mcp with your API keys"
+echo "  source .env.mcp"
+echo ""
+echo -e "${BOLD}Step 3: Verify Setup${NC}"
+echo "  claude              # Start Claude Code"
+echo "  /context            # Check configuration loaded"
+echo "  /mcp                # Verify MCP connections"
+echo "  /help               # View available commands"
+echo ""
+
+# Available Commands Quick Reference
+echo -e "${BOLD}${CYAN}⚡ AVAILABLE COMMANDS:${NC}"
+echo ""
+echo -e "${BOLD}Task Management:${NC}"
+echo "  /start-task [id]    Start working on a task"
+echo "  /complete-task [id] Complete with verification"
+echo ""
+echo -e "${BOLD}Issue Management:${NC}"
+echo "  /log-issue [desc]   Record issue during work"
+echo "  /retrospective      End-of-session review"
+echo "  /sync-issues-to-global  Sync to global tracker"
+echo ""
+echo -e "${BOLD}Quality:${NC}"
+echo "  /review             Code review before commit"
+echo "  /checkpoint         Save state for handoff"
+echo ""
+echo "========================================"
 echo ""
