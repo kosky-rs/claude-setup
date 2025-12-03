@@ -70,6 +70,7 @@ cp "${TEMPLATE_DIR}/commands/checkpoint.md" ~/.claude/commands/
 cp "${TEMPLATE_DIR}/commands/review.md" ~/.claude/commands/
 cp "${TEMPLATE_DIR}/commands/upgrade-global.md" ~/.claude/commands/
 cp "${TEMPLATE_DIR}/commands/verify-upgrade.md" ~/.claude/commands/
+cp "${TEMPLATE_DIR}/commands/security-review.md" ~/.claude/commands/
 echo -e "${GREEN}✓ Command files created${NC}"
 
 # Issues tracking
@@ -125,10 +126,12 @@ echo "  ~/.claude/settings.json"
 echo "  ~/.claude.json"
 echo "  ~/.claude/issues.json"
 echo "  ~/.claude/upgrade-log.md"
+echo "  ~/.claude/security-audit.log (created on first use)"
 echo "  ~/.claude/docs/"
 echo "  ~/.claude/commands/"
 echo "    - checkpoint.md"
 echo "    - review.md"
+echo "    - security-review.md"
 echo "    - upgrade-global.md"
 echo "    - verify-upgrade.md"
 echo ""
@@ -138,7 +141,14 @@ echo "  2. Add your API keys to environment variables"
 echo "  3. Run 'claude' to verify setup"
 echo "  4. Run '/context' to check configuration"
 echo ""
-echo "Issue Management Commands:"
+echo "Available Commands:"
+echo "  /checkpoint       - Save state for session handoff"
+echo "  /review           - Code review before commit"
+echo "  /security-review  - Security-focused code review"
 echo "  /upgrade-global   - Analyze issues and upgrade configuration"
 echo "  /verify-upgrade   - Verify effectiveness of recent upgrades"
+echo ""
+echo "Security Features:"
+echo "  - Enhanced permission rules (secrets, keys, dangerous commands)"
+echo "  - Audit logging for sensitive operations (~/.claude/security-audit.log)"
 echo ""

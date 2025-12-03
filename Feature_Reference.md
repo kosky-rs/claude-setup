@@ -25,6 +25,7 @@
 |---------|------|---------|
 | `/checkpoint` | 現在の状態を保存 | コンテキスト60%超過時、複雑な作業前 |
 | `/review` | コードレビュー実行 | コミット前の品質チェック |
+| `/security-review` | セキュリティ特化レビュー | 機密性の高い変更のコミット前 |
 | `/upgrade-global` | グローバル設定をアップグレード | 蓄積Issueから設定改善（週次推奨） |
 | `/verify-upgrade` | アップグレードの効果検証 | 改善後5セッション経過時 |
 
@@ -69,6 +70,27 @@
   - ドキュメント
 - 問題を重要度別に分類
 - 判定: APPROVED / NEEDS CHANGES / BLOCKED
+```
+
+#### `/security-review`
+```
+機能:
+- シークレット検出（APIキー、パスワード、トークン、秘密鍵）
+- 入力バリデーション確認
+- 認証・認可チェック
+- インジェクション防止確認（SQL, XSS, コマンド）
+- 機密ファイルへの変更検出
+
+検出対象:
+- API Keys, Passwords, Tokens
+- Private Keys (PEM形式)
+- AWS Credentials
+- Generic secrets
+
+判定:
+- PASS: 問題なし、コミット可能
+- WARN: 警告あり、確認後コミット可
+- FAIL: 問題あり、修正必須
 ```
 
 #### `/start-task`
@@ -195,6 +217,20 @@
 | `*.jsx` | `prettier --write` | React JSXの自動フォーマット |
 | `*.json` | `prettier --write` | JSONの自動フォーマット |
 
+### 監査ログ Hooks（重要操作の記録）
+
+| 対象操作 | 記録先 | 内容 |
+|---------|-------|------|
+| `Write(*.env*)` | `~/.claude/security-audit.log` | 環境変数ファイルへの書き込み |
+| `Write(*secret*)` | `~/.claude/security-audit.log` | シークレット関連ファイルへの書き込み |
+| `Bash(git push*)` | `~/.claude/security-audit.log` | git push実行 |
+
+**ログ形式:**
+```
+2025-12-03_10:30:00|WRITE|.env.local
+2025-12-03_11:45:00|GIT_PUSH
+```
+
 ### PreToolUse Hooks（危険操作のブロック）
 
 | パターン | 動作 | メッセージ |
@@ -254,10 +290,14 @@
 
 | カテゴリ | 禁止パターン | 理由 |
 |---------|-------------|------|
-| 機密ファイル | `Read(./.env)`, `Read(./.env.*)` | 環境変数の漏洩防止 |
+| 環境変数 | `Read(./.env)`, `Read(./.env.*)` | 環境変数の漏洩防止 |
 | シークレット | `Read(**/secrets/**)`, `Read(**/.ssh/**)` | 認証情報の保護 |
+| 秘密鍵 | `Read(**/*.pem)`, `Read(**/*secret*)` | 秘密鍵・機密ファイルの保護 |
+| クラウド認証 | `Read(**/.aws/*)` | AWS認証情報の保護 |
 | 本番環境 | `Write(./production.*)`, `Write(./.env.production)` | 本番環境の保護 |
 | 危険コマンド | `Bash(rm -rf /)`, `Bash(sudo *)`, `Bash(chmod 777 *)` | システム破壊防止 |
+| リモート実行 | `Bash(curl * \| bash)`, `Bash(wget * \| bash)` | 悪意あるスクリプト実行防止 |
+| ディスク破壊 | `Bash(* > /dev/sd*)`, `Bash(dd if=*)` | ディスク破壊防止 |
 
 ---
 
@@ -425,6 +465,7 @@
 ├── settings.json                # 権限・Hooks設定
 ├── issues.json                  # グローバルIssue追跡
 ├── upgrade-log.md               # アップグレード履歴
+├── security-audit.log           # 監査ログ（自動生成）
 ├── docs/
 │   ├── behavior-principles.md   # 行動原則
 │   ├── task-workflow.md         # タスク管理ワークフロー
@@ -433,6 +474,7 @@
 └── commands/
     ├── checkpoint.md            # /checkpoint
     ├── review.md                # /review
+    ├── security-review.md       # /security-review
     ├── upgrade-global.md        # /upgrade-global
     └── verify-upgrade.md        # /verify-upgrade
 
@@ -477,6 +519,7 @@ your-project/
 
 # 品質管理
 /review                # コードレビュー
+/security-review       # セキュリティレビュー
 /checkpoint            # 状態保存
 
 # Issue管理
